@@ -4,3 +4,5 @@ bower_components
 .tscache
 .baseDir.ts
 .vscode
+/fetchUpstream.bat
+/update.bat
