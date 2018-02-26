@@ -1170,6 +1170,7 @@ declare namespace FreeJqGrid {
 		multiboxonly?: boolean;
 		multikey?: boolean;
 		multiPageSelection?: boolean;
+		selectAllMode?: "filtered" | "all"; // "filtered"
 		multiselect?: boolean;
 		multiselectPosition?: "left" | "right" | "none";
 		multiselectWidth?: number; // 16
@@ -1284,7 +1285,7 @@ declare namespace FreeJqGrid {
 		commonIconClass?: string;
 		counters?: CounterInformation[];
 		displayField?: string[];
-		formatDisplayField?: ((this: BodyTable, displayValue: string, value: any, cm: ColumnModel, idx: number, grp: GroupInformation) => string)[];
+		formatDisplayField?: ((this: BodyTable, displayValue: string, value: any, cm: ColumnModel, idx: number, grp: GroupInformation, index: number) => string)[];
 		groupCollapse?: (options: { group: number, rowid: string }) => boolean;
 		groupColumnShow?: boolean[];
 		groupField: string[];
