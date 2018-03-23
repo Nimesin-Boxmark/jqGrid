@@ -8,7 +8,7 @@
  * Dual licensed under the MIT and GPL licenses
  * http://www.opensource.org/licenses/mit-license.php
  * http://www.gnu.org/licenses/gpl-2.0.html
- * Date: 2018-02-22
+ * Date: 2018-03-18
  */
 //jsHint options
 /*jshint eqnull:true */
@@ -4048,7 +4048,7 @@
 						if (arrayReaderInfos[idName]) {
 							idIndex = arrayReaderInfos[idName].order;
 						}
-						if (isXML) {
+						if (isXML && p.keyName === false) {
 							if (typeof idName === "string" && /^\[\w+\]$/.test(idName)) {
 								idName = attrReader(idName.substring(1, idName.length - 1));
 							} else if (typeof idName === "string" && /^\w+$/.test(idName)) {
@@ -8225,7 +8225,7 @@
 				row = rows[iRow];
 				cell = row.cells[iCol];
 				$cell = $(row.cells[iCol]);
-				if (cell != null && ($(row).hasClass("jqgrow") || ($(row).hasClass("jqgroup") && cell.colSpan === 1))) {
+				if (cell != null && ($(row).hasClass("jqgrow") && row.style.display !== "none" && cell.style.display !== "none" || ($(row).hasClass("jqgroup") && cell.colSpan === 1))) {
 					$cellFirstChild = $(cell.firstChild);
 					if ($cellFirstChild.hasClass(wrapperClassName)) {
 						colWidth = Math.max(colWidth, $cellFirstChild.outerWidth() + widthOuter);
@@ -11936,7 +11936,12 @@
 				var editoptions = $.extend({}, cm.editoptions || {});
 				delete editoptions.readonly;
 				delete editoptions.disabled;
-				var searchoptions = $.extend({}, editoptions, cm.searchoptions || {}, getCmInfo(cm.cmName), { id: jgrid.randId(), name: cm.name });
+				var searchoptions = $.extend(
+						{},
+						editoptions,
+						cm.searchoptions || {},
+						getCmInfo(cm.cmName),
+						{ id: jgrid.randId(), name: cm.name, mode: "search" });
 				searchoptions.column = cm;
 				var ruleDataInput = jgrid.createEl.call($t, cm.inputtype,
 						$.extend({}, searchoptions, searchoptions.attr || {}),
@@ -17450,21 +17455,26 @@
 							},
 							drop: function (ev, ui) {
 								if (!$(ui.draggable).hasClass("jqgrow")) { return; }
-								var accept = $(ui.draggable).attr("id");
-								var getdata = ui.draggable.parent().parent().jqGrid("getRowData", accept);
+								var rowid = $(ui.draggable).attr("id"),
+									$srcGrid = ui.draggable.parent().parent(),
+									getdata = $srcGrid.jqGrid("getRowData", rowid);
 								if (!opts1.dropbyname) {
-									var i = 0, tmpdata = {}, nm, key;
-									var dropmodel = $("#" + jqID(this.id)).jqGrid("getGridParam", "colModel");
+									var tmpdata = {}, iSrc, iDest, srcName, destName,
+										srcColModel = $srcGrid.jqGrid("getGridParam", "colModel"),
+										destColModel = $("#" + jqID(this.id)).jqGrid("getGridParam", "colModel");
 									try {
-										for (key in getdata) {
-											if (getdata.hasOwnProperty(key)) {
-												nm = dropmodel[i].name;
-												if (!(nm === "cb" || nm === "rn" || nm === "subgrid")) {
-													if (getdata.hasOwnProperty(key) && dropmodel[i]) {
-														tmpdata[nm] = getdata[key];
+										for (iSrc = 0, iDest = 0; iSrc < srcColModel.length && iDest < destColModel.length; iSrc++) {
+											srcName = srcColModel[iSrc].name;
+											if (!(srcName === "cb" || srcName === "rn" || srcName === "subgrid")) {
+												// src column found, which need be copied
+												for (; iDest < destColModel.length; iDest++) {
+													destName = destColModel[iDest].name;
+													if (!(destName === "cb" || destName === "rn" || destName === "subgrid")) {
+														tmpdata[destName] = getdata[srcName];
+														break;
 													}
 												}
-												i++;
+												iDest++;
 											}
 										}
 										getdata = tmpdata;
@@ -17481,7 +17491,11 @@
 									var grid;
 									if (opts1.autoid) {
 										if ($.isFunction(opts1.autoid)) {
-											grid = opts1.autoid.call(this, getdata);
+											grid = opts1.autoid.call(this, getdata, {
+												rowid: rowid,
+												ev: ev,
+												ui: ui
+											});
 										} else {
 											grid = Math.ceil(Math.random() * 1000);
 											grid = opts1.autoidprefix + grid;
